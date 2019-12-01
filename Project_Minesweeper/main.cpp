@@ -6,7 +6,7 @@
 
 using namespace std;
 using namespace sf;
-
+//modify
 class Tile{
 private:
     bool revealed;

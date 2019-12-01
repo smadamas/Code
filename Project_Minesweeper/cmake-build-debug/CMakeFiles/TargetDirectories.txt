@@ -1,3 +1,3 @@
-/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/cmake-build-debug/CMakeFiles/SFML_Demo.dir
+/Users/smadamas/Desktop/minesweeper/Code/Project_Minesweeper/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/smadamas/Desktop/minesweeper/Code/Project_Minesweeper/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/smadamas/Desktop/minesweeper/Code/Project_Minesweeper/cmake-build-debug/CMakeFiles/SFML_Demo.dir
