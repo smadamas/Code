@@ -3,62 +3,116 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
 using namespace std;
 using namespace sf;
-//modify
+
 class Tile{
 private:
+    int number;
     bool revealed;
     bool flagged;
-    char has_mine;
+    int has_mine;
     int xCoord;
     int yCoord;
-    vector<int> adjacent;
+    int adj_mines;
+    Tile* neighbors[8];
 
 public:
 
     Tile(){
+        number = 0;
         revealed = 0;
         flagged = 0;
         has_mine = 0;
         xCoord = 0;
         yCoord = 0;
-        adjacent;
+        adj_mines = 0;
+        neighbors;
 
     }
     Tile(int xCoord, int yCoord){
+        number = 0;
         revealed = 0;
         flagged = 0;
         has_mine = 0;
         this->xCoord = xCoord;
         this->yCoord = yCoord;
-        adjacent;
+        adj_mines = 0;
+        neighbors;
+    }
+
+    void setNumber(int i){
+        number = i;
+    }
+
+    int getNumber(){
+        return number;
     }
 
     void setMine(char mine_presence){
-        has_mine = mine_presence;
+        has_mine = mine_presence - '0';
     }
 
-    char getMine(){
+    int getMine(){
         return has_mine;
+    }
+
+    void setRevealed(bool value){
+        revealed = value;
+    }
+
+    bool getRevealed(){
+        return revealed;
+    }
+
+    void setFlagged(bool value){
+        revealed = value;
+    }
+
+    bool getFlagged(){
+        return flagged;
+    }
+
+    void setCoords(int x, int y){
+        xCoord = x;
+        yCoord = y;
+    }
+
+
+    void setNeighbor(Tile* tile, int position){
+        neighbors[position] = tile;
+    }
+
+    Tile* getNeighbor(int position){
+        return neighbors[position];
+    }
+
+    void setAdjMines(int total){
+        adj_mines = total;
+    }
+
+    int getAdjMines(){
+        return adj_mines;
     }
 };
 
 class Board{
 private:
     string gameState;
-    int numTiles;
-    int mines;
-    vector<Tile> tiles;
+    int mines_left;
 
 public:
-    Texture texture;
-    Texture face;
+    Tile tiles[400];
+    vector<int> visitedTiles;
+
+    Texture happyface;
+    Texture loseface;
+    Texture winface;
     Texture digits;
     Texture test;
     Texture debug;
-    Sprite sprite;
     Sprite face_sprite;
     Sprite digits_sprite;
     Sprite debug_sprite;
@@ -66,22 +120,41 @@ public:
     Sprite test_sprite2;
     Sprite test_sprite3;
 
+    Texture hiddenTexture;
+    Texture revealedTexture;
+    Texture flagTexture;
+    Texture mineTexture;
+    Texture Tex1;
+    Texture Tex2;
+    Texture Tex3;
+    Texture Tex4;
+    Texture Tex5;
+    Texture Tex6;
+    Texture Tex7;
+    Texture Tex8;
+    Sprite hiddenSprite;
+    Sprite revealedSprite;
+    Sprite flagSprite;
+    Sprite mineSprite;
+    Sprite numberSprite;
+
+
     Board(){
-        gameState = "Broken";
-        numTiles = 0;
-        mines = 0;
-        tiles;
-    }
-    Board(int numTiles, int mines){
+        RenderWindow window;
         gameState = "Playing";
-        numTiles = 400;
-        mines = 50;
-        tiles;
+        mines_left = 50;
+    }
+
+    string getState(){
+        return gameState;
+    }
+    void setState(string input){
+        gameState = input;
     }
 
     void loadTest(int test_num){
         ifstream read;
-        vector<char> mines;
+        char mines[400];
         string currentLine;
         int entry;
         int counter = 0;
@@ -103,7 +176,7 @@ public:
             for (unsigned int i = 0; i < 25; i++){
                 entry = currentLine.at(i);
                 //cout << "Step 1: " << (char)entry << endl;
-                mines.push_back((char)entry);
+                mines[counter] = (char)entry;
                 //cout << "Step 2: " << mines[counter] << endl;
                 counter++;
             }
@@ -111,15 +184,117 @@ public:
 
         for (unsigned int i = 0; i < 400; i++){
             tiles[i].setMine(mines[i]);
-            cout << "Step 3: " << tiles[i].getMine() << endl;
+            //cout << "Step 3: " << tiles[i].getMine() << endl;
         }
-        cout << "Done" << endl;
+        cout << "Loaded Test" << endl;
+
+        makeNeighbors();
 
     }
 
+    void makeNeighbors(){
+        int number = -1;
+        int adj_mines = 0;
+        for (unsigned int i = 0; i < 400; i++){
+            for (unsigned int j = 0; j < 8; j++){
+                switch (j){
+                    case 0:
+                        number = i - 25 - 1;
+                        break;
+                    case 1:
+                        number = i - 25;
+                        break;
+                    case 2:
+                        number = i - 25 + 1;
+                        break;
+                    case 3:
+                        number = i + 1;
+                        break;
+                    case 4:
+                        number = i + 25 + 1;
+                        break;
+                    case 5:
+                        number = i + 25;
+                        break;
+                    case 6:
+                        number = i + 25 - 1;
+                        break;
+                    case 7:
+                        number = i - 1;
+                        break;
+                }
 
-    Board BuildBoard(RenderWindow &window, vector<Tile> input){
-        Board myBoard = Board(numTiles, 50);
+                    if (i%25 == 0 && (j == 0 || j == 6 || j == 7)){
+                        tiles[i].setNeighbor(nullptr, j);
+                    }
+                    else if ((i+1)%25 == 0 && (j == 2 || j == 3 || j == 4)){
+                        tiles[i].setNeighbor(nullptr, j);
+                    }
+                    else if (i >= 375 && (j == 4 || j == 5 || j == 6)){
+                        tiles[i].setNeighbor(nullptr, j);
+                    }
+                    else if (i <= 24 && (j == 0 || j == 1 || j == 2)){
+                        tiles[i].setNeighbor(nullptr, j);
+                    }
+                    else {
+                        adj_mines += tiles[number].getMine();
+                        tiles[i].setNeighbor(&tiles[number], j);
+                    }
+            }
+            tiles[i].setAdjMines(adj_mines);
+            adj_mines = 0;
+        }
+        cout << "Made neighbors" << endl;
+    }
+
+    void Reset(){
+        int mineCount = 0;
+        int index;
+
+        //Loading random mines
+        for (unsigned int i = 0; i < 400; i++){
+            tiles[i].setMine('0');
+        }
+        while (mineCount < 50){
+            index = (rand() % 400);
+            if (tiles[index].getMine() == 0){
+                tiles[index].setMine('1');
+                mineCount++;
+            }
+        }
+
+        for (unsigned int x = 0; x < 400; x++){
+            tiles[x].setRevealed(false);
+        }
+        gameState = "Playing";
+        makeNeighbors();
+    }
+
+    void RecursiveReveal(Tile* input, int tileNum){
+        vector<int>::iterator it;
+        bool found = false;
+        for (unsigned int i = 0; i < 8; i++){
+            if (input->getNeighbor(i) != nullptr){
+                for (unsigned int j = 0; j < visitedTiles.size(); j++){
+                    if (j == input->getNeighbor(i)->getNumber()){
+                        found = true;
+                    }
+                }
+                if (input->getNeighbor(i)->getAdjMines() == 0 && !found && !input->getNeighbor(i)->getRevealed()){
+                    visitedTiles.push_back(input->getNumber());
+                    RecursiveReveal(input->getNeighbor(i), input->getNeighbor(i)->getNumber());
+                }
+                else {
+                    input->getNeighbor(i)->setRevealed(true);
+                }
+            }
+            found = false;
+        }
+        input->setRevealed(true);
+        visitedTiles.clear();
+    }
+
+    void BuildBoard(RenderWindow &window){
 
         int thisX;
         int thisY;
@@ -128,28 +303,125 @@ public:
         int col;
         int row;
 
-        Tile thisTile;
-        int numTiles = 0;
-        vector<Tile> thisBoardTiles = input;
 
-        if (!texture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_hidden.png"))
+        //Set Sprites with textures
+        if (!hiddenTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_hidden.png"))
         {
             cout << "\nDidn't load properly." << endl << endl;
         }
         else{
-            texture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_hidden.png");
+            hiddenTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_hidden.png");
         }
-        sprite.setTexture(texture);
-        imgWidth = sprite.getTexture()->getSize().x;
-        imgHeight = sprite.getTexture()->getSize().y;
+        hiddenSprite.setTexture(hiddenTexture);
+
+        if (!revealedTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_revealed.png"))
+        {
+            cout << "\nDidn't load properly." << endl << endl;
+        }
+        else{
+            revealedTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/tile_revealed.png");
+        }
+        revealedSprite.setTexture(revealedTexture);
+
+        if (!flagTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/flag.png"))
+        {
+            cout << "\nDidn't load properly." << endl << endl;
+        }
+        else{
+            flagTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/flag.png");
+        }
+        flagSprite.setTexture(flagTexture);
+
+        if (!mineTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/mine.png"))
+        {
+            cout << "\nDidn't load properly." << endl << endl;
+        }
+        else{
+            mineTexture.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/mine.png");
+        }
+        mineSprite.setTexture(mineTexture);
+
+        imgWidth = hiddenSprite.getTexture()->getSize().x;
+        imgHeight = hiddenSprite.getTexture()->getSize().y;
         thisX = 0.f; thisY = 0.f;
         col = 1; row = 1;
 
+
         for (unsigned int i = 0; i < 400; i++){
-            sprite.setPosition(Vector2f(thisX, thisY));
-            window.draw(sprite);
-            thisTile = Tile(thisX, thisY);
-            thisBoardTiles.push_back(thisTile);
+            if (tiles[i].getRevealed() && tiles[i].getMine() == 1){
+                revealedSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(revealedSprite);
+                mineSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(mineSprite);
+            }
+            else if (tiles[i].getRevealed()){
+                revealedSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(revealedSprite);
+                switch (tiles[i].getAdjMines()){
+                    case 0:
+                        break;
+                    case 1:
+                        Tex1.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_1.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex1);
+                        window.draw(numberSprite);
+                        break;
+                    case 2:
+                        Tex2.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_2.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex2);
+                        window.draw(numberSprite);
+                        break;
+                    case 3:
+                        Tex3.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_3.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex3);
+                        window.draw(numberSprite);
+                        break;
+                    case 4:
+                        Tex4.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_4.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex4);
+                        window.draw(numberSprite);
+                        break;
+                    case 5:
+                        Tex5.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_5.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex5);
+                        window.draw(numberSprite);
+                        break;
+                    case 6:
+                        Tex6.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_6.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex6);
+                        window.draw(numberSprite);
+                        break;
+                    case 7:
+                        Tex7.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_7.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex7);
+                        window.draw(numberSprite);
+                        break;
+                    case 8:
+                        Tex8.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/number_8.png");
+                        numberSprite.setPosition(Vector2f(thisX, thisY));
+                        numberSprite.setTexture(Tex8);
+                        window.draw(numberSprite);
+                        break;
+                }
+            }
+            else if (!tiles[i].getRevealed() && tiles[i].getFlagged()){
+                hiddenSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(hiddenSprite);
+                flagSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(flagSprite);
+            }
+            else {
+                hiddenSprite.setPosition(Vector2f(thisX, thisY));
+                window.draw(hiddenSprite);
+            }
+
+            tiles[i].setCoords((int)thisX, (int)thisY);
 
             if (col == 25){
                 thisY += imgHeight;
@@ -165,16 +437,44 @@ public:
         }
 
         //Other Buttons
-        if (!face.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_happy.png"))
-        {
-            cout << "\nDidn't load properly." << endl << endl;
+        if (gameState == "Playing"){
+            if (!happyface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_happy.png"))
+            {
+                cout << "\nDidn't load properly." << endl << endl;
+            }
+            else{
+                happyface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_happy.png");
+                face_sprite.setTexture(happyface);
+                face_sprite.setPosition(Vector2f(300, 512));
+                window.draw(face_sprite);
+            }
         }
-        else{
-            face.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_happy.png");
-            face_sprite.setTexture(face);
-            face_sprite.setPosition(Vector2f(300, 512));
-            window.draw(face_sprite);
+        else if (gameState == "Lost"){
+            if (!loseface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_lose.png"))
+            {
+                cout << "\nDidn't load properly." << endl << endl;
+            }
+            else{
+                loseface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_lose.png");
+                face_sprite.setTexture(loseface);
+                face_sprite.setPosition(Vector2f(300, 512));
+                window.draw(face_sprite);
+            }
         }
+        else if (gameState == "Won"){
+            if (!winface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_win.png"))
+            {
+                cout << "\nDidn't load properly." << endl << endl;
+            }
+            else{
+                winface.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/face_win.png");
+                face_sprite.setTexture(winface);
+                face_sprite.setPosition(Vector2f(300, 512));
+                window.draw(face_sprite);
+            }
+        }
+
+
         if (!digits.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png"))
         {
             cout << "\nDidn't load properly." << endl << endl;
@@ -199,27 +499,26 @@ public:
 
             test.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/test_1.png");
             test_sprite1.setTexture(test);
-            myBoard.test_sprite1.setPosition(Vector2f(768 - (4*imgWidth), 512));
+            test_sprite1.setPosition(Vector2f(768 - (4*imgWidth), 512));
             window.draw(test_sprite1);
 
             test.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/test_2.png");
             test_sprite2.setTexture(test);
-            myBoard.test_sprite2.setPosition(Vector2f(768 - (3*imgWidth), 512));
+            test_sprite2.setPosition(Vector2f(768 - (3*imgWidth), 512));
             window.draw(test_sprite2);
 
             test.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/test_3.png");
             test_sprite3.setTexture(test);
-            myBoard.test_sprite3.setPosition(Vector2f(768 - (2*imgWidth), 512));
+            test_sprite3.setPosition(Vector2f(768 - (2*imgWidth), 512));
             window.draw(test_sprite3);
         }
-
-        return myBoard;
     }
 };
 
 
 int main()
 {
+    bool is_clicked = false;
 
     //Below is a test which just creates a green circle in a black field
 //    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
@@ -240,23 +539,20 @@ int main()
 //        window.display();
 //    }
 
-
-
-
-//make a 800 by 600 window
+    //make a 800 by 600 window
     RenderWindow window(sf::VideoMode(800, 600), "Minesweeper");
-    Board gameBoard;
-    vector<Tile> thisBoardTiles;
-    int test_num;
 
+    //Initialize Board
+    Board gameBoard = Board();
+    for (unsigned int i = 0; i < 400; i++){
+        gameBoard.tiles[i].setNumber(i);
+    }
 
     while (window.isOpen()){
         Event event;
-        while (window.pollEvent(event))
-        {
+        while (window.pollEvent(event)){
             // check the type of the event...
-            switch (event.type)
-            {
+            switch (event.type){
                 // window closed
                 case Event::Closed:
                     window.close();
@@ -264,54 +560,103 @@ int main()
 
                 //pressing left click
                 case Event::MouseButtonPressed:
-                    if (event.mouseButton.button == Mouse::Left)
-                        {
-//                        std::cout << "the left button was pressed" << endl;
+                    int row;
+                    int col;
+                    int tileNum;
 
-                        //Wheres the mouse?
-                        sf::Vector2f Mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                        std::cout << "Mouse.x = " << Mouse.x << ", Mouse.y = " << Mouse.y << std::endl;
+                    //Wheres the mouse?
+                    sf::Vector2f Mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                    std::cout << "Mouse.x = " << Mouse.x << ", Mouse.y = " << Mouse.y << std::endl;
 
+                    if (event.mouseButton.button == Mouse::Left){
+                        cout << "Left button was pressed" << endl;
 
                         //Test Clicked
                         if (gameBoard.test_sprite1.getGlobalBounds().contains(Mouse)){
+                            gameBoard.Reset();
                             gameBoard.loadTest(1);
                         }
                         else if (gameBoard.test_sprite2.getGlobalBounds().contains(Mouse)){
+                            gameBoard.Reset();
                             gameBoard.loadTest(2);
                         }
                         else if (gameBoard.test_sprite3.getGlobalBounds().contains(Mouse)){
+                            gameBoard.Reset();
                             gameBoard.loadTest(3);
                         }
 
-                        //For tiles, divide the x and y by 32 (rounding down) to get which tile to modify
+                        //Tile Clicked
+                        if (Mouse.x <= 800 && Mouse.y <= 512){
+                            Tile* ref;
+                            row = floor((int)Mouse.y/32);
+                            col = floor(((int)Mouse.x)/32);
+                            tileNum = 25*(row) + (col); //corrections for 0th row/col
+                            if (gameBoard.tiles[tileNum].getMine() == 1){ //reveal mines because you clicked one and lost
+                                for (unsigned int x = 0; x < 400; x++){
+                                    if (gameBoard.tiles[x].getMine() == 1){
+                                        gameBoard.tiles[x].setRevealed(true);
+                                    }
+                                }
+                                gameBoard.setState("Lost");
+                                cout << "Game Over!" << endl;
+                            }
+                            else {
+                                gameBoard.tiles[tileNum].setRevealed(true);
+                                ref = &gameBoard.tiles[tileNum];
+                                if (gameBoard.tiles[tileNum].getAdjMines() == 0){
+                                    gameBoard.makeNeighbors();
+                                    gameBoard.RecursiveReveal(ref, tileNum);
+                                }
+                            }
+                        }
 
-                        //Reset Game
-                        //replace face, set new random mines
 
-                        //Debug
-                        //Reveal mines
+                        //Reset Game, Face Clicked
+                            if (gameBoard.face_sprite.getGlobalBounds().contains(Mouse)){
+                                gameBoard.Reset();
+                            }
+
+
+                        //Debug == Reveal mines
+                            if (gameBoard.debug_sprite.getGlobalBounds().contains(Mouse)){
+                                if (is_clicked == false){
+                                    for (unsigned int x = 0; x < 400; x++){
+                                        if (gameBoard.tiles[x].getMine() == 1){
+                                            gameBoard.tiles[x].setRevealed(true);
+                                        }
+                                    }
+                                    is_clicked = true;
+                                }
+                                else {
+                                    for (unsigned int x = 0; x < 400; x++){
+                                        if (gameBoard.tiles[x].getMine() == 1){
+                                            gameBoard.tiles[x].setRevealed(false);
+                                        }
+                                    }
+                                    is_clicked = false;
+                                }
+
+                            }
+
 
                         }
-                    break;
+                        else if (event.mouseButton.button == Mouse::Right){
+                            if (Mouse.x <= 800 && Mouse.y <= 512){
+                                row = floor((int)Mouse.y/32);
+                                col = floor(((int)Mouse.x)/32);
+                                tileNum = 25*(row) + (col); //corrections for 0th row/col
 
-                    //movin around the mouse
-                case Event::MouseMoved:
-//                    std::cout << "new mouse x: " << event.mouseMove.x << std::endl;
-//                    std::cout << "new mouse y: " << event.mouseMove.y << std::endl;
-
-                    break;
-
-                    // we don't process other types of events, just restart
-                default:
-                    break;
+                                gameBoard.tiles[tileNum].setFlagged(true);
+                            }
+                        }
+                        break;
             }
         }
 
         window.clear();
 
         //Draw the gameboard one every instant?
-        gameBoard = gameBoard.BuildBoard(window, thisBoardTiles);
+        gameBoard.BuildBoard(window);
 
         window.display();
     }
@@ -319,15 +664,6 @@ int main()
 //load images from images folder and lay out hidden tiles, etc.
 //make 400 tiles (25 by 16)
 
-//make class for board, tile?
-
-//make buttons
-
-//helper functions - clearing board, setting flags/mines, recalc. adjacent mines
-
-//random mine generation (50)
-
-//make arrays for each mine
 
 
     return 0;
