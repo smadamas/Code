@@ -68,7 +68,7 @@ public:
     }
 
     void setFlagged(bool value){
-        revealed = value;
+        flagged = value;
     }
 
     bool getFlagged(){
@@ -107,19 +107,19 @@ public:
     Tile tiles[400];
     vector<int> visitedTiles;
 
+    //Menu Stuff
     Texture happyface;
     Texture loseface;
     Texture winface;
-    Texture digits;
     Texture test;
     Texture debug;
     Sprite face_sprite;
-    Sprite digits_sprite;
     Sprite debug_sprite;
     Sprite test_sprite1;
     Sprite test_sprite2;
     Sprite test_sprite3;
 
+    //Game Stuff
     Texture hiddenTexture;
     Texture revealedTexture;
     Texture flagTexture;
@@ -138,6 +138,23 @@ public:
     Sprite mineSprite;
     Sprite numberSprite;
 
+    //Number Stuff
+    Texture dig0;
+    Texture dig1;
+    Texture dig2;
+    Texture dig3;
+    Texture dig4;
+    Texture dig5;
+    Texture dig6;
+    Texture dig7;
+    Texture dig8;
+    Texture dig9;
+    Texture neg;
+    Texture digits;
+    Sprite digitSprite2;
+    Sprite digitSprite1;
+    Sprite negSprite;
+
 
     Board(){
         RenderWindow window;
@@ -150,6 +167,14 @@ public:
     }
     void setState(string input){
         gameState = input;
+    }
+
+    int getMinesLeft(){
+        return mines_left;
+    }
+
+    void setMinesLeft(int input){
+        mines_left = input;
     }
 
     void loadTest(int test_num){
@@ -265,6 +290,7 @@ public:
 
         for (unsigned int x = 0; x < 400; x++){
             tiles[x].setRevealed(false);
+            tiles[x].setFlagged(false);
         }
         gameState = "Playing";
         makeNeighbors();
@@ -294,6 +320,91 @@ public:
         visitedTiles.clear();
     }
 
+    void setDigits(int input){
+        digits.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png");
+        input = abs(input);
+        int digWidth = digits.getSize().x;
+        int digHeight = digits.getSize().y;
+
+        neg.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(10*(digWidth/11), 0, digWidth/11, digHeight));
+        dig0.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(0, 0, digWidth/11, digHeight));
+        dig1.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(digWidth/11, 0, digWidth/11, digHeight));
+        dig2.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(2*(digWidth/11), 0, digWidth/11, digHeight));
+        dig3.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(3*(digWidth/11), 0, digWidth/11, digHeight));
+        dig4.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(4*(digWidth/11), 0, digWidth/11, digHeight));
+        dig5.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(5*(digWidth/11), 0, digWidth/11, digHeight));
+        dig6.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(6*(digWidth/11), 0, digWidth/11, digHeight));
+        dig7.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(7*(digWidth/11), 0, digWidth/11, digHeight));
+        dig8.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(8*(digWidth/11), 0, digWidth/11, digHeight));
+        dig9.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png", IntRect(9*(digWidth/11), 0, digWidth/11, digHeight));
+
+        negSprite.setTexture(neg);
+        switch (input%10){
+            case 0:
+                digitSprite2.setTexture(dig0);
+                break;
+            case 1:
+                digitSprite2.setTexture(dig1);
+                break;
+            case 2:
+                digitSprite2.setTexture(dig2);
+                break;
+            case 3:
+                digitSprite2.setTexture(dig3);
+                break;
+            case 4:
+                digitSprite2.setTexture(dig4);
+                break;
+            case 5:
+                digitSprite2.setTexture(dig5);
+                break;
+            case 6:
+                digitSprite2.setTexture(dig6);
+                break;
+            case 7:
+                digitSprite2.setTexture(dig7);
+                break;
+            case 8:
+                digitSprite2.setTexture(dig8);
+                break;
+            case 9:
+                digitSprite2.setTexture(dig9);
+                break;
+        }
+        switch (input/10){
+            case 0:
+                digitSprite1.setTexture(dig0);
+                break;
+            case 1:
+                digitSprite1.setTexture(dig1);
+                break;
+            case 2:
+                digitSprite1.setTexture(dig2);
+                break;
+            case 3:
+                digitSprite1.setTexture(dig3);
+                break;
+            case 4:
+                digitSprite1.setTexture(dig4);
+                break;
+            case 5:
+                digitSprite1.setTexture(dig5);
+                break;
+            case 6:
+                digitSprite1.setTexture(dig6);
+                break;
+            case 7:
+                digitSprite1.setTexture(dig7);
+                break;
+            case 8:
+                digitSprite1.setTexture(dig8);
+                break;
+            case 9:
+                digitSprite1.setTexture(dig9);
+                break;
+        }
+    }
+
     void BuildBoard(RenderWindow &window){
 
         int thisX;
@@ -302,6 +413,18 @@ public:
         int imgWidth;
         int col;
         int row;
+
+        //Reset the digits display
+        setDigits(getMinesLeft());
+        //Draw both digits and neg
+        if (getMinesLeft() < 0){
+            negSprite.setPosition(Vector2f(0, 512));
+            window.draw(negSprite);
+        }
+        digitSprite1.setPosition(Vector2f(21, 512));
+        window.draw(digitSprite1);
+        digitSprite2.setPosition(Vector2f(42, 512));
+        window.draw(digitSprite2);
 
 
         //Set Sprites with textures
@@ -475,16 +598,6 @@ public:
         }
 
 
-        if (!digits.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png"))
-        {
-            cout << "\nDidn't load properly." << endl << endl;
-        }
-        else{
-            digits.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/digits.png");
-            digits_sprite.setTexture(digits);
-            digits_sprite.setPosition(Vector2f(0, 512));
-            window.draw(digits_sprite);
-        }
         if (!test.loadFromFile("/Users/smadamas/Desktop/Code/Minesweeper/Project_Minesweeper/images/test_1.png"))
         {
             cout << "\nDidn't load properly." << endl << endl;
@@ -548,6 +661,8 @@ int main()
         gameBoard.tiles[i].setNumber(i);
     }
 
+    gameBoard.Reset();
+
     while (window.isOpen()){
         Event event;
         while (window.pollEvent(event)){
@@ -563,13 +678,15 @@ int main()
                     int row;
                     int col;
                     int tileNum;
+                    int tiles_left = 0;
+
 
                     //Wheres the mouse?
                     sf::Vector2f Mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
                     std::cout << "Mouse.x = " << Mouse.x << ", Mouse.y = " << Mouse.y << std::endl;
 
                     if (event.mouseButton.button == Mouse::Left){
-                        cout << "Left button was pressed" << endl;
+                        //cout << "Left button was pressed" << endl;
 
                         //Test Clicked
                         if (gameBoard.test_sprite1.getGlobalBounds().contains(Mouse)){
@@ -591,21 +708,40 @@ int main()
                             row = floor((int)Mouse.y/32);
                             col = floor(((int)Mouse.x)/32);
                             tileNum = 25*(row) + (col); //corrections for 0th row/col
-                            if (gameBoard.tiles[tileNum].getMine() == 1){ //reveal mines because you clicked one and lost
-                                for (unsigned int x = 0; x < 400; x++){
-                                    if (gameBoard.tiles[x].getMine() == 1){
-                                        gameBoard.tiles[x].setRevealed(true);
+                            if (!gameBoard.tiles[tileNum].getFlagged()){
+                                if (gameBoard.tiles[tileNum].getMine() == 1){ //reveal mines because you clicked one and lost
+                                    for (unsigned int x = 0; x < 400; x++){
+                                        if (gameBoard.tiles[x].getMine() == 1){
+                                            gameBoard.tiles[x].setRevealed(true);
+                                        }
+                                    }
+                                    gameBoard.setState("Lost");
+                                    cout << "Game Over!" << endl;
+                                }
+                                else {
+                                    gameBoard.tiles[tileNum].setRevealed(true);
+                                    ref = &gameBoard.tiles[tileNum];
+                                    if (gameBoard.tiles[tileNum].getAdjMines() == 0){
+                                        gameBoard.makeNeighbors();
+                                        gameBoard.RecursiveReveal(ref, tileNum);
                                     }
                                 }
-                                gameBoard.setState("Lost");
-                                cout << "Game Over!" << endl;
-                            }
-                            else {
-                                gameBoard.tiles[tileNum].setRevealed(true);
-                                ref = &gameBoard.tiles[tileNum];
-                                if (gameBoard.tiles[tileNum].getAdjMines() == 0){
-                                    gameBoard.makeNeighbors();
-                                    gameBoard.RecursiveReveal(ref, tileNum);
+
+                                //Game Won?
+                                for (unsigned int x = 0; x < 400; x++){
+                                    if (!gameBoard.tiles[x].getMine() && !gameBoard.tiles[x].getRevealed()){
+                                        tiles_left += 1;
+                                    }
+                                }
+                                if (tiles_left == 0){
+                                    gameBoard.setState("Won");
+                                    cout << "You Win!" << endl;
+                                    for (unsigned int x = 0; x < 400; x++){
+                                        if (gameBoard.tiles[x].getMine() == 1){
+                                            gameBoard.tiles[x].setFlagged(true);
+                                            gameBoard.setMinesLeft(00);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -639,17 +775,24 @@ int main()
                             }
 
 
-                        }
-                        else if (event.mouseButton.button == Mouse::Right){
-                            if (Mouse.x <= 800 && Mouse.y <= 512){
-                                row = floor((int)Mouse.y/32);
-                                col = floor(((int)Mouse.x)/32);
-                                tileNum = 25*(row) + (col); //corrections for 0th row/col
+                    }
+                    else if (sf::Mouse::isButtonPressed(sf::Mouse::Right)){
+                        if (Mouse.x <= 800 && Mouse.y <= 512){
+                            row = floor((int)Mouse.y/32);
+                            col = floor(((int)Mouse.x)/32);
+                            tileNum = 25*(row) + (col); //corrections for 0th row/col
 
+                            if (gameBoard.tiles[tileNum].getFlagged()){
+                                gameBoard.tiles[tileNum].setFlagged(false);
+                                gameBoard.setMinesLeft(gameBoard.getMinesLeft()+1);
+                            }
+                            else {
                                 gameBoard.tiles[tileNum].setFlagged(true);
+                                gameBoard.setMinesLeft(gameBoard.getMinesLeft()-1);
                             }
                         }
-                        break;
+                    }
+                    break;
             }
         }
 
